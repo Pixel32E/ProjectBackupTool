@@ -26,8 +26,10 @@ export const state = reactive({
   backupFolder: "",
   windowsExists: false,
   androidExists: false,
+  webExists: false,
   windowsProjects: [] as ProjectEntry[],
   androidProjects: [] as ProjectEntry[],
+  webProjects: [] as ProjectEntry[],
   backups: [] as BackupEntry[],
   selectedProjectPath: null as string | null,
   selectedBackupPath: null as string | null,
@@ -53,7 +55,7 @@ export const selectedProject = computed(() => {
   const path = state.selectedProjectPath;
   if (!path) return null;
   return (
-    [...state.windowsProjects, ...state.androidProjects].find(
+    [...state.windowsProjects, ...state.androidProjects, ...state.webProjects].find(
       (project) => project.path === path,
     ) ?? null
   );
@@ -68,6 +70,20 @@ export const selectedBackup = computed(() => {
 export const canBackup = computed(() => Boolean(selectedProject.value) && !state.busy);
 export const canRestore = computed(() => Boolean(selectedBackup.value) && !state.busy);
 export const canDelete = computed(() => Boolean(selectedBackup.value) && !state.busy);
+
+const allKinds: RootKind[] = ["windows", "android", "web"];
+
+const rootOf: Record<RootKind, () => string | null> = {
+  windows: () => state.config?.windows_root ?? null,
+  android: () => state.config?.android_root ?? null,
+  web: () => state.config?.web_root ?? null,
+};
+
+const kindLabels: Record<RootKind, string> = {
+  windows: "Windows",
+  android: "Android",
+  web: "Web",
+};
 
 function beginJob(label: string): void {
   state.job = { active: true, label, percent: 0, detail: "", indeterminate: true };
@@ -92,7 +108,7 @@ export async function init(): Promise<void> {
     state.config = config;
     state.backups = backups.items;
     state.backupFolder = backups.folder;
-    await Promise.all([refreshProjects("windows"), refreshProjects("android")]);
+    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
     state.ready = true;
   } catch (error) {
     notify("error", "初始化失败", String(error));
@@ -100,18 +116,16 @@ export async function init(): Promise<void> {
 }
 
 export async function refreshProjects(kind: RootKind): Promise<void> {
-  const root =
-    kind === "windows"
-      ? (state.config?.windows_root ?? null)
-      : (state.config?.android_root ?? null);
-
-  const scan = await api.listProjects(root);
+  const scan = await api.listProjects(rootOf[kind]());
   if (kind === "windows") {
     state.windowsProjects = scan.items;
     state.windowsExists = scan.exists;
-  } else {
+  } else if (kind === "android") {
     state.androidProjects = scan.items;
     state.androidExists = scan.exists;
+  } else {
+    state.webProjects = scan.items;
+    state.webExists = scan.exists;
   }
 }
 
@@ -126,11 +140,7 @@ export async function refreshBackups(): Promise<void> {
 
 export async function refreshAll(): Promise<void> {
   try {
-    await Promise.all([
-      refreshProjects("windows"),
-      refreshProjects("android"),
-      refreshBackups(),
-    ]);
+    await Promise.all([...allKinds.map((kind) => refreshProjects(kind)), refreshBackups()]);
     notify("info", "列表已刷新", "项目与备份记录已重新扫描");
   } catch (error) {
     notify("error", "刷新失败", String(error));
@@ -151,11 +161,7 @@ export async function pickRoot(kind: RootKind): Promise<void> {
     if (!config) return;
     state.config = config;
     await refreshProjects(kind);
-    notify(
-      "info",
-      "根目录已更新",
-      kind === "windows" ? "Windows 项目目录已保存" : "Android 项目目录已保存",
-    );
+    notify("info", "根目录已更新", `${kindLabels[kind]} 项目目录已保存`);
   } catch (error) {
     notify("error", "选择目录失败", String(error));
   }
@@ -245,7 +251,7 @@ export async function restoreSelected(): Promise<void> {
       target = first.target;
     }
 
-    await Promise.all([refreshProjects("windows"), refreshProjects("android")]);
+    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
     notify("success", "恢复完成", target);
   } catch (error) {
     notify("error", "恢复失败", String(error));

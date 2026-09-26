@@ -25,6 +25,13 @@ const roots = computed(() => [
     path: state.config?.android_root ?? null,
     exists: state.androidExists,
   },
+  {
+    kind: "web" as RootKind,
+    label: "Web",
+    icon: "globe",
+    path: state.config?.web_root ?? null,
+    exists: state.webExists,
+  },
 ]);
 
 async function choose(kind: RootKind): Promise<void> {
@@ -52,12 +59,17 @@ async function choose(kind: RootKind): Promise<void> {
       :key="root.kind"
       class="pathchip"
       :class="{ 'pathchip--empty': !root.path || !root.exists }"
-      :title="root.path ? `${root.path}（点击在资源管理器中打开）` : '尚未选择目录'"
+      :title="
+        root.path
+          ? `${root.label}：${root.path}（点击在资源管理器中打开）`
+          : `${root.label} 项目目录尚未选择`
+      "
       @click="revealPath(root.path)"
     >
       <Icon :name="root.icon" :size="15" />
-      <span class="pathchip__kind">{{ root.label }}</span>
-      <span class="pathchip__value">{{ root.path ? compactPath(root.path) : "未选择" }}</span>
+      <span class="pathchip__value">
+        {{ root.path ? compactPath(root.path) : root.label }}
+      </span>
     </button>
 
     <button class="btn btn--ghost" @click="state.settingsOpen = true">
@@ -78,6 +90,13 @@ async function choose(kind: RootKind): Promise<void> {
         <span class="menu__text">
           <span class="menu__title">Android 项目目录</span>
           <span class="menu__sub">{{ state.config?.android_root ?? "未选择" }}</span>
+        </span>
+      </button>
+      <button class="menu__item" @click="choose('web')">
+        <Icon name="globe" :size="16" />
+        <span class="menu__text">
+          <span class="menu__title">Web 项目目录</span>
+          <span class="menu__sub">{{ state.config?.web_root ?? "未选择" }}</span>
         </span>
       </button>
     </PopupMenu>

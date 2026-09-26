@@ -57,11 +57,10 @@ pub fn save_config(app: AppHandle, config: Config) -> Result<(), String> {
 /// 弹出系统文件夹选择框并把结果写入配置；取消时返回 None。
 #[tauri::command]
 pub async fn choose_root(app: AppHandle, kind: String) -> Result<Option<Config>, String> {
-    let is_android = kind == "android";
-    let title = if is_android {
-        "选择 Android 项目根目录"
-    } else {
-        "选择 Windows 项目根目录"
+    let title = match kind.as_str() {
+        "android" => "选择 Android 项目根目录",
+        "web" => "选择 Web 项目根目录",
+        _ => "选择 Windows 项目根目录",
     };
 
     let dialog_app = app.clone();
@@ -82,10 +81,10 @@ pub async fn choose_root(app: AppHandle, kind: String) -> Result<Option<Config>,
     };
 
     let mut config = config::load(&app);
-    if is_android {
-        config.android_root = Some(path);
-    } else {
-        config.windows_root = Some(path);
+    match kind.as_str() {
+        "android" => config.android_root = Some(path),
+        "web" => config.web_root = Some(path),
+        _ => config.windows_root = Some(path),
     }
     config::save(&app, &config)?;
     Ok(Some(config))
@@ -200,24 +199,28 @@ pub async fn restore_backup(
         .android_root
         .as_deref()
         .filter(|path| Path::new(path).is_dir());
+    let web_root = config
+        .web_root
+        .as_deref()
+        .filter(|path| Path::new(path).is_dir());
 
-    if windows_root.is_none() && android_root.is_none() {
+    // 有效根目录按 Android → Web → Windows 的优先级排列
+    let roots: Vec<PathBuf> = [android_root, web_root, windows_root]
+        .into_iter()
+        .flatten()
+        .map(PathBuf::from)
+        .collect();
+
+    if roots.is_empty() {
         return Err("请先设置有效的项目根目录".into());
     }
 
-    // Android 根目录下存在同名项目时恢复到 Android，否则优先 Windows 根目录
-    let target_root = match (android_root, windows_root) {
-        (Some(android), Some(windows)) => {
-            if Path::new(android).join(&project_name).exists() {
-                PathBuf::from(android)
-            } else {
-                PathBuf::from(windows)
-            }
-        }
-        (Some(android), None) => PathBuf::from(android),
-        (None, Some(windows)) => PathBuf::from(windows),
-        (None, None) => unreachable!(),
-    };
+    // 某根目录下存在同名项目时恢复到该目录，否则优先 Windows 根目录
+    let target_root = roots
+        .iter()
+        .find(|root| root.join(&project_name).exists())
+        .unwrap_or_else(|| roots.last().expect("roots 非空"))
+        .clone();
     let target = target_root.join(&project_name);
 
     if target.exists() {

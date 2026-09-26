@@ -26,6 +26,8 @@ const paths: Record<string, string> = {
     '<rect x="3" y="4.5" width="18" height="12" rx="2.2"/><path d="M9 20h6M12 16.5V20"/>',
   smartphone:
     '<rect x="6.6" y="2.6" width="10.8" height="18.8" rx="2.6"/><path d="M11 18.6h2"/>',
+  globe:
+    '<circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8"/><path d="M12 3.4c2.2 2.4 3.3 5.3 3.3 8.6s-1.1 6.2-3.3 8.6c-2.2-2.4-3.3-5.3-3.3-8.6s1.1-6.2 3.3-8.6z"/>',
   close: '<path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/>',
   minimize: '<path d="M5.5 12h13"/>',
   maximize: '<rect x="5.8" y="5.8" width="12.4" height="12.4" rx="2"/>',

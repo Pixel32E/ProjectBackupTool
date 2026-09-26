@@ -33,7 +33,7 @@ import {
 
       <p v-else class="actionbar__tip">
         <Icon name="info" :size="15" />
-        选择一个项目后点击「备份项目」，双击项目可快速备份；右键备份记录可发送到设备
+        选择一个项目后点击「备份项目」；右键备份记录可发送到设备
       </p>
     </div>
 

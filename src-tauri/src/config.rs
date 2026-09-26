@@ -37,6 +37,8 @@ pub struct Config {
     pub windows_root: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub android_root: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub web_root: Option<String>,
     pub compression: CompressionSettings,
 }
 
@@ -78,17 +80,20 @@ mod tests {
         let config = Config {
             windows_root: Some("D:\\Projects".into()),
             android_root: None,
+            web_root: Some("F:\\WebProjects".into()),
             compression: CompressionSettings::default(),
         };
 
         let text = toml::to_string_pretty(&config).unwrap();
         assert!(text.contains("windows_root"));
         assert!(!text.contains("android_root"));
+        assert!(text.contains("web_root"));
         assert!(text.contains("[compression]"));
 
         let parsed: Config = toml::from_str(&text).unwrap();
         assert_eq!(parsed.windows_root.as_deref(), Some("D:\\Projects"));
         assert_eq!(parsed.android_root, None);
+        assert_eq!(parsed.web_root.as_deref(), Some("F:\\WebProjects"));
         assert_eq!(parsed.compression.block_size, "1MB");
         assert!(parsed.compression.block_linked);
     }
@@ -98,6 +103,7 @@ mod tests {
         let parsed: Config = toml::from_str("android_root = \"E:\\\\Android\"").unwrap();
         assert_eq!(parsed.android_root.as_deref(), Some("E:\\Android"));
         assert_eq!(parsed.windows_root, None);
+        assert_eq!(parsed.web_root, None);
         assert_eq!(parsed.compression.block_size, "1MB");
         assert!(parsed.compression.content_checksum);
         assert!(!parsed.compression.block_checksum);

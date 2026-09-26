@@ -11,6 +11,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let config: AppConfig = {
   windows_root: "D:\\Projects",
   android_root: "E:\\AndroidProjects",
+  web_root: "F:\\WebProjects",
   compression: {
     block_size: "1MB",
     block_linked: true,
@@ -33,6 +34,8 @@ const windowsProjects = [
 ];
 
 const androidProjects = ["Aurora Mobile", "Flux Reader", "Nimbus Wear"];
+
+const webProjects = ["Docs Portal", "Marketing Site", "Admin Console", "Status Page"];
 
 const backupFolder = "D:\\Projects-Backup";
 
@@ -95,18 +98,24 @@ export async function invokePreview(
       return null;
 
     case "choose_root": {
-      const kind = args.kind as "windows" | "android";
-      const path = kind === "android" ? "E:\\AndroidProjects" : "D:\\Projects";
-      config = {
-        ...config,
-        [kind === "android" ? "android_root" : "windows_root"]: path,
-      };
+      const kind = args.kind as "windows" | "android" | "web";
+      const picks = {
+        windows: { key: "windows_root", path: "D:\\Projects" },
+        android: { key: "android_root", path: "E:\\AndroidProjects" },
+        web: { key: "web_root", path: "F:\\WebProjects" },
+      } as const;
+      config = { ...config, [picks[kind].key]: picks[kind].path };
       return config;
     }
 
     case "list_projects": {
       const root = (args.root as string | null) ?? null;
-      const names = root === config.android_root ? androidProjects : windowsProjects;
+      const names =
+        root === config.android_root
+          ? androidProjects
+          : root === config.web_root
+            ? webProjects
+            : windowsProjects;
       return {
         root: root ?? "",
         exists: Boolean(root),

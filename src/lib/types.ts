@@ -14,6 +14,7 @@ export interface CompressionSettings {
 export interface AppConfig {
   windows_root: string | null;
   android_root: string | null;
+  web_root: string | null;
   compression: CompressionSettings;
 }
 
@@ -68,4 +69,4 @@ export interface ProgressPayload {
   message: string;
 }
 
-export type RootKind = "windows" | "android";
+export type RootKind = "windows" | "android" | "web";
