@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+
+  /* 画布与容器 */
+  --bg: #ece5dd;
+  --bg-deep: #e6ded5;
+  --glow: rgba(222, 90, 50, 0.14);
+  --surface: #fcfaf8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f4efe9;
+  --surface-hover: #f7f2ec;
+
+  /* 描边 */
+  --border: rgba(30, 22, 17, 0.08);
+  --border-strong: rgba(30, 22, 17, 0.16);
+
+  /* 文字 */
+  --text: #1b1511;
+  --text-secondary: #6d635b;
+  --text-tertiary: #9c9189;
+
+  /* 强调色 */
+  --accent: #de5a32;
+  --accent-strong: #c34a24;
+  --accent-press: #ab3f1c;
+  --accent-soft: #f8e5db;
+  --accent-tint: #fdf4ef;
+
+  /* 语义色 */
+  --danger: #b8442c;
+  --danger-soft: #fae6df;
+  --success: #3f7d52;
+  --warning: #a9711f;
+
+  /* 形状 */
+  --radius-xl: 22px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 9px;
+  --pill: 999px;
+
+  /* 阴影 */
+  --shadow-xs: 0 1px 2px rgba(31, 22, 16, 0.04);
+  --shadow-sm: 0 1px 2px rgba(31, 22, 16, 0.05), 0 4px 14px rgba(31, 22, 16, 0.05);
+  --shadow-md: 0 12px 32px rgba(31, 22, 16, 0.1);
+  --shadow-lg: 0 28px 64px rgba(31, 22, 16, 0.2);
+
+  /* 字体 */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", "Inter", "PingFang SC",
+    "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Inter", "PingFang SC",
+    "Microsoft YaHei UI", system-ui, sans-serif;
+}
