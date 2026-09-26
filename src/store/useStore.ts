@@ -31,6 +31,8 @@ export const state = reactive({
   androidProjects: [] as ProjectEntry[],
   webProjects: [] as ProjectEntry[],
   backups: [] as BackupEntry[],
+  blocked: [] as string[],
+  activeKind: "windows" as RootKind,
   selectedProjectPath: null as string | null,
   selectedBackupPath: null as string | null,
   busy: false,
@@ -85,6 +87,20 @@ const kindLabels: Record<RootKind, string> = {
   web: "Web",
 };
 
+const kindExists: Record<RootKind, () => boolean> = {
+  windows: () => state.windowsExists,
+  android: () => state.androidExists,
+  web: () => state.webExists,
+};
+
+/** 当前项目面板选中的项目种类对应的根目录信息（供标题栏展示） */
+export const activeRoot = computed(() => ({
+  kind: state.activeKind,
+  label: kindLabels[state.activeKind],
+  path: rootOf[state.activeKind](),
+  exists: kindExists[state.activeKind](),
+}));
+
 function beginJob(label: string): void {
   state.job = { active: true, label, percent: 0, detail: "", indeterminate: true };
 }
@@ -104,10 +120,15 @@ export async function init(): Promise<void> {
       state.job.indeterminate = payload.percent <= 0;
     });
 
-    const [config, backups] = await Promise.all([api.loadConfig(), api.listBackups()]);
+    const [config, backups, blocked] = await Promise.all([
+      api.loadConfig(),
+      api.listBackups(),
+      api.listBlocked(),
+    ]);
     state.config = config;
     state.backups = backups.items;
     state.backupFolder = backups.folder;
+    state.blocked = blocked;
     await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
     state.ready = true;
   } catch (error) {
@@ -149,6 +170,33 @@ export async function refreshAll(): Promise<void> {
 
 export function selectProject(entry: ProjectEntry): void {
   state.selectedProjectPath = entry.path;
+}
+
+/** 屏蔽项目文件夹：写入黑名单后刷新列表，该条目不再显示。 */
+export async function blockProject(path: string): Promise<void> {
+  try {
+    await api.blockProject(path);
+    if (state.selectedProjectPath === path) {
+      state.selectedProjectPath = null;
+    }
+    state.blocked = await api.listBlocked();
+    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    notify("info", "已屏蔽该文件夹", "该条目不再显示于项目列表");
+  } catch (error) {
+    notify("error", "屏蔽失败", String(error));
+  }
+}
+
+/** 取消屏蔽：从黑名单移除并刷新列表，该文件夹重新显示。 */
+export async function unblockProject(path: string): Promise<void> {
+  try {
+    await api.unblockProject(path);
+    state.blocked = await api.listBlocked();
+    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    notify("info", "已取消屏蔽", "该文件夹将重新显示于项目列表");
+  } catch (error) {
+    notify("error", "操作失败", String(error));
+  }
 }
 
 export function selectBackup(entry: BackupEntry): void {

@@ -2,7 +2,7 @@
 import { reactive } from "vue";
 
 import Icon from "./Icon.vue";
-import { revealPath, saveSettings, state } from "../store/useStore";
+import { revealPath, saveSettings, state, unblockProject } from "../store/useStore";
 import type { CompressionSettings } from "../lib/types";
 
 const fallback: CompressionSettings = {
@@ -123,6 +123,27 @@ const blockSizes = [
             </span>
             <button class="btn btn--plain" @click="revealPath(state.backupFolder)">打开</button>
           </div>
+        </div>
+
+        <div class="setting">
+          <div class="setting__row">
+            <div class="setting__label">
+              <div class="setting__title">屏蔽的项目（黑名单）</div>
+              <div class="setting__desc">
+                在项目列表右键可屏蔽文件夹；此处取消屏蔽后立即恢复显示
+              </div>
+            </div>
+            <span class="chip">{{ state.blocked.length }} 项</span>
+          </div>
+
+          <div v-if="state.blocked.length" class="blocklist">
+            <div v-for="path in state.blocked" :key="path" class="blockrow">
+              <Icon name="ban" :size="14" />
+              <span class="blockrow__value" :title="path">{{ path }}</span>
+              <button class="btn btn--plain" @click="unblockProject(path)">取消屏蔽</button>
+            </div>
+          </div>
+          <p v-else class="setting__desc" style="margin-top: 10px">暂无屏蔽的项目</p>
         </div>
       </div>
 

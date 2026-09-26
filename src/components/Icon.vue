@@ -32,6 +32,7 @@ const paths: Record<string, string> = {
   minimize: '<path d="M5.5 12h13"/>',
   maximize: '<rect x="5.8" y="5.8" width="12.4" height="12.4" rx="2"/>',
   check: '<path d="m5 12.6 4.6 4.6L19 7.4"/>',
+  ban: '<circle cx="12" cy="12" r="8.6"/><path d="M6.2 6.2 17.8 17.8"/>',
   checkCircle: '<circle cx="12" cy="12" r="8.6"/><path d="m8.3 12.3 2.6 2.6 4.9-5.4"/>',
   alert:
     '<path d="M10.3 4.3 3.1 16.8A2 2 0 0 0 4.8 19.8h14.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9.6v4"/><path d="M12 16.8h.01"/>',

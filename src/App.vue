@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 
 import ActionBar from "./components/ActionBar.vue";
 import BackupPanel from "./components/BackupPanel.vue";
@@ -9,10 +9,22 @@ import SettingsDialog from "./components/SettingsDialog.vue";
 import TitleBar from "./components/TitleBar.vue";
 import ToastHost from "./components/ToastHost.vue";
 import Toolbar from "./components/Toolbar.vue";
-import { init, state } from "./store/useStore";
+import { init, refreshAll, state } from "./store/useStore";
+
+function onKeydown(event: KeyboardEvent): void {
+  if (event.key === "F5") {
+    event.preventDefault();
+    void refreshAll();
+  }
+}
 
 onMounted(() => {
   void init();
+  window.addEventListener("keydown", onKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown);
 });
 </script>
 

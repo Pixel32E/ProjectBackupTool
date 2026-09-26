@@ -5,6 +5,7 @@ use tauri::{AppHandle, Emitter};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::archive::{self, BackupList, CompressOutcome};
+use crate::blocklist::{self, Blocklist};
 use crate::config::{self, Config};
 use crate::kdeconnect::{self, DeviceListResult};
 
@@ -90,15 +91,16 @@ pub async fn choose_root(app: AppHandle, kind: String) -> Result<Option<Config>,
     Ok(Some(config))
 }
 
-/// 扫描根目录下的一级子目录作为待备份项目。
+/// 扫描根目录下的一级子目录作为待备份项目，屏蔽黑名单中的条目会被过滤。
 #[tauri::command]
-pub async fn list_projects(root: Option<String>) -> Result<ProjectScan, String> {
-    tauri::async_runtime::spawn_blocking(move || scan_projects(root))
+pub async fn list_projects(app: AppHandle, root: Option<String>) -> Result<ProjectScan, String> {
+    let blocklist = blocklist::load(&app);
+    tauri::async_runtime::spawn_blocking(move || scan_projects(root, &blocklist))
         .await
         .map_err(|e| format!("扫描项目目录失败：{e}"))
 }
 
-fn scan_projects(root: Option<String>) -> ProjectScan {
+fn scan_projects(root: Option<String>, blocklist: &Blocklist) -> ProjectScan {
     let Some(root) = root.filter(|r| !r.trim().is_empty()) else {
         return ProjectScan {
             root: String::new(),
@@ -119,12 +121,17 @@ fn scan_projects(root: Option<String>) -> ProjectScan {
     let mut items = Vec::new();
     if let Ok(dir) = std::fs::read_dir(path) {
         for entry in dir.flatten() {
-            if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                items.push(ProjectEntry {
-                    name: entry.file_name().to_string_lossy().to_string(),
-                    path: entry.path().to_string_lossy().to_string(),
-                });
+            if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                continue;
             }
+            let item_path = entry.path().to_string_lossy().to_string();
+            if blocklist.contains(&item_path) {
+                continue;
+            }
+            items.push(ProjectEntry {
+                name: entry.file_name().to_string_lossy().to_string(),
+                path: item_path,
+            });
         }
     }
     items.sort_by_key(|item| item.name.to_lowercase());
@@ -134,6 +141,30 @@ fn scan_projects(root: Option<String>) -> ProjectScan {
         exists: true,
         items,
     }
+}
+
+/// 将项目文件夹加入屏蔽黑名单，之后不再出现在项目列表中。
+#[tauri::command]
+pub fn block_project(app: AppHandle, path: String) -> Result<(), String> {
+    if path.trim().is_empty() {
+        return Err("路径未设置".into());
+    }
+    blocklist::add(&app, &path)
+}
+
+/// 读取屏蔽黑名单（供设置面板管理）。
+#[tauri::command]
+pub fn list_blocked(app: AppHandle) -> Vec<String> {
+    blocklist::load(&app).blocked
+}
+
+/// 将项目文件夹从屏蔽黑名单移除，恢复其显示。
+#[tauri::command]
+pub fn unblock_project(app: AppHandle, path: String) -> Result<(), String> {
+    if path.trim().is_empty() {
+        return Err("路径未设置".into());
+    }
+    blocklist::remove(&app, &path)
 }
 
 #[tauri::command]

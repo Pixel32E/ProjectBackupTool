@@ -1,4 +1,5 @@
 mod archive;
+mod blocklist;
 mod commands;
 mod config;
 mod kdeconnect;
@@ -13,6 +14,9 @@ pub fn run() {
             commands::save_config,
             commands::choose_root,
             commands::list_projects,
+            commands::block_project,
+            commands::list_blocked,
+            commands::unblock_project,
             commands::list_backups,
             commands::backup_project,
             commands::restore_backup,

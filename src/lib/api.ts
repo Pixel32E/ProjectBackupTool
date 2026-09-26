@@ -54,6 +54,12 @@ export const chooseRoot = (kind: RootKind) =>
 export const listProjects = (root: string | null) =>
   call<ProjectScan>("list_projects", { root });
 
+export const blockProject = (path: string) => call<void>("block_project", { path });
+
+export const listBlocked = () => call<string[]>("list_blocked");
+
+export const unblockProject = (path: string) => call<void>("unblock_project", { path });
+
 export const listBackups = () => call<BackupList>("list_backups");
 
 export const backupProject = (projectPath: string, fileName: string) =>

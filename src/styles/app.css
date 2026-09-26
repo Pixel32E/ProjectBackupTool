@@ -152,7 +152,7 @@ ul {
 
 .columns {
   display: grid;
-  grid-template-columns: minmax(320px, 1.4fr) minmax(300px, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   flex: 1;
   min-height: 0;
@@ -316,7 +316,7 @@ ul {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  max-width: 172px;
+  max-width: 100%;
   height: 38px;
   padding: 0 14px;
   border: 1px solid var(--border);
@@ -333,7 +333,7 @@ ul {
 
 .pathchip__value {
   overflow: hidden;
-  max-width: 126px;
+  max-width: none;
   color: var(--accent-strong);
   font-size: 12.5px;
   font-weight: 600;
@@ -996,6 +996,39 @@ ul {
 }
 
 .pathbox__value {
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.blocklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 168px;
+  margin-top: 10px;
+}
+
+.blockrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.blockrow .icon {
+  color: var(--text-tertiary);
+}
+
+.blockrow__value {
   flex: 1;
   overflow: hidden;
   color: var(--text-secondary);

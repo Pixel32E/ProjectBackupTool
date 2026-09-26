@@ -39,6 +39,8 @@ const webProjects = ["Docs Portal", "Marketing Site", "Admin Console", "Status P
 
 const backupFolder = "D:\\Projects-Backup";
 
+const blockedPaths = new Set<string>();
+
 let backups: BackupEntry[] = [
   { name: "Aurora Desk", minutes: 8, size: 41_822_208 },
   { name: "Flux Notes", minutes: 96, size: 12_582_912 },
@@ -119,8 +121,23 @@ export async function invokePreview(
       return {
         root: root ?? "",
         exists: Boolean(root),
-        items: names.map((name) => ({ name, path: `${root}\\${name}` })),
+        items: names
+          .map((name) => ({ name, path: `${root}\\${name}` }))
+          .filter((item) => !blockedPaths.has(item.path)),
       };
+    }
+
+    case "block_project": {
+      blockedPaths.add(args.path as string);
+      return null;
+    }
+
+    case "list_blocked":
+      return [...blockedPaths];
+
+    case "unblock_project": {
+      blockedPaths.delete(args.path as string);
+      return null;
     }
 
     case "list_backups":

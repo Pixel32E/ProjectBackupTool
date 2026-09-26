@@ -2,8 +2,9 @@
 import { computed, ref } from "vue";
 
 import Icon from "./Icon.vue";
-import { selectProject, state } from "../store/useStore";
-import type { RootKind } from "../lib/types";
+import PopupMenu from "./PopupMenu.vue";
+import { blockProject, revealPath, selectProject, state } from "../store/useStore";
+import type { ProjectEntry, RootKind } from "../lib/types";
 
 const kinds = computed(() => [
   {
@@ -35,13 +36,37 @@ const kinds = computed(() => [
   },
 ]);
 
-const activeKind = ref<RootKind>("windows");
-
 const active = computed(
-  () => kinds.value.find((kind) => kind.key === activeKind.value) ?? kinds.value[0],
+  () => kinds.value.find((kind) => kind.key === state.activeKind) ?? kinds.value[0],
 );
 
 const total = computed(() => kinds.value.reduce((sum, kind) => sum + kind.items.length, 0));
+
+const menuPoint = ref<{ x: number; y: number } | null>(null);
+const menuPath = ref<string | null>(null);
+
+function openMenu(event: MouseEvent, entry: ProjectEntry): void {
+  selectProject(entry);
+  menuPath.value = entry.path;
+  menuPoint.value = { x: event.clientX, y: event.clientY };
+}
+
+function closeMenu(): void {
+  menuPoint.value = null;
+  menuPath.value = null;
+}
+
+async function blockItem(): Promise<void> {
+  const path = menuPath.value;
+  closeMenu();
+  if (path) await blockProject(path);
+}
+
+async function openInExplorer(): Promise<void> {
+  const path = menuPath.value;
+  closeMenu();
+  await revealPath(path);
+}
 </script>
 
 <template>
@@ -57,9 +82,9 @@ const total = computed(() => kinds.value.reduce((sum, kind) => sum + kind.items.
           v-for="kind in kinds"
           :key="kind.key"
           class="kindtab"
-          :class="{ 'is-active': activeKind === kind.key }"
+          :class="{ 'is-active': state.activeKind === kind.key }"
           :title="kind.title"
-          @click="activeKind = kind.key"
+          @click="state.activeKind = kind.key"
         >
           <Icon :name="kind.icon" :size="17" />
           <span class="kindtab__label">{{ kind.label }}</span>
@@ -82,6 +107,7 @@ const total = computed(() => kinds.value.reduce((sum, kind) => sum + kind.items.
             :class="{ 'is-active': state.selectedProjectPath === item.path }"
             :title="item.path"
             @click="selectProject(item)"
+            @contextmenu.prevent="openMenu($event, item)"
           >
             <span class="row__icon"><Icon name="folder" :size="15" /></span>
             <span class="row__name">{{ item.name }}</span>
@@ -97,5 +123,16 @@ const total = computed(() => kinds.value.reduce((sum, kind) => sum + kind.items.
         <p v-else class="empty">{{ active.root ? "该目录下没有子文件夹" : active.gap }}</p>
       </section>
     </div>
+
+    <PopupMenu v-if="menuPoint" :point="menuPoint" :width="216" @close="closeMenu">
+      <button class="menu__item" @click="blockItem">
+        <Icon name="ban" :size="16" />
+        <span class="menu__text"><span class="menu__title">屏蔽该文件夹</span></span>
+      </button>
+      <button class="menu__item" @click="openInExplorer">
+        <Icon name="folder" :size="16" />
+        <span class="menu__text"><span class="menu__title">在文件资源管理器打开</span></span>
+      </button>
+    </PopupMenu>
   </div>
 </template>
