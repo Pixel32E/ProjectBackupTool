@@ -33,6 +33,8 @@ export interface BackupEntry {
   file_path: string;
   file_name: string;
   project_name: string;
+  /** 用户备注的名称/版本说明；无备注时为 null，界面回退显示项目名 */
+  remark: string | null;
   size: number;
   /** Unix 毫秒 */
   modified: number;

@@ -171,10 +171,29 @@ pub fn unblock_project(app: AppHandle, path: String) -> Result<(), String> {
 pub async fn list_backups(app: AppHandle) -> Result<BackupList, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let folder = archive::resolve_backup_folder(&app)?;
-        archive::list_backups(&folder)
+        let remarks = crate::records::load(&app);
+        archive::list_backups(&folder, &remarks)
     })
     .await
     .map_err(|e| format!("读取备份列表失败：{e}"))?
+}
+
+/// 为一条备份记录设置备注名称（版本说明）；备注为空则移除备注、恢复为项目名。
+#[tauri::command]
+pub async fn rename_backup(
+    app: AppHandle,
+    file_path: String,
+    remark: String,
+) -> Result<(), String> {
+    let path = PathBuf::from(&file_path);
+    if !path.is_file() {
+        return Err("备份文件不存在".into());
+    }
+    let file_name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .ok_or_else(|| "备份文件名无效".to_string())?;
+    crate::records::rename(&app, &file_name, &remark)
 }
 
 /// 压缩项目目录并写入备份文件；返回被跳过的文件列表。

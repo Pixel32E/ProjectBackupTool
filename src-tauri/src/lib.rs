@@ -3,6 +3,7 @@ mod blocklist;
 mod commands;
 mod config;
 mod kdeconnect;
+mod records;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -21,6 +22,7 @@ pub fn run() {
             commands::backup_project,
             commands::restore_backup,
             commands::delete_backup,
+            commands::rename_backup,
             commands::reveal_path,
             commands::list_devices,
             commands::send_to_device

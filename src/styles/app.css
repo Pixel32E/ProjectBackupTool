@@ -876,6 +876,28 @@ ul {
   text-overflow: ellipsis;
 }
 
+.dialog__input {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.dialog__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(222, 90, 50, 0.14);
+}
+
+.dialog__input::placeholder {
+  color: var(--text-tertiary);
+}
+
 .dialog__footer {
   display: flex;
   justify-content: flex-end;

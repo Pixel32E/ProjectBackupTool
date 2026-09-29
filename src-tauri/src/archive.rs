@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -21,6 +22,8 @@ pub struct BackupEntry {
     pub file_path: String,
     pub file_name: String,
     pub project_name: String,
+    /// 用户备注的名称/版本说明；无备注时为 None，界面回退显示项目名
+    pub remark: Option<String>,
     pub size: u64,
     /// 修改时间（Unix 毫秒）
     pub modified: u64,
@@ -54,7 +57,7 @@ pub fn resolve_backup_folder(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// 扫描备份目录中的 .lz4 文件，按修改时间倒序返回。
-pub fn list_backups(folder: &Path) -> Result<BackupList, String> {
+pub fn list_backups(folder: &Path, remarks: &BTreeMap<String, String>) -> Result<BackupList, String> {
     let mut items = Vec::new();
 
     if folder.is_dir() {
@@ -83,7 +86,8 @@ pub fn list_backups(folder: &Path) -> Result<BackupList, String> {
             items.push(BackupEntry {
                 project_name: project_name_of(&file_name),
                 file_path: path.to_string_lossy().to_string(),
-                file_name,
+                file_name: file_name.clone(),
+                remark: remarks.get(&file_name).cloned(),
                 size: meta.len(),
                 modified,
             });

@@ -20,6 +20,8 @@ const paths: Record<string, string> = {
   trash:
     '<path d="M4 7h16"/><path d="M9.6 7V5.7A1.7 1.7 0 0 1 11.3 4h1.4a1.7 1.7 0 0 1 1.7 1.7V7"/><path d="M6.6 7l.85 12.1a2 2 0 0 0 2 1.9h5.1a2 2 0 0 0 2-1.9L17.4 7"/><path d="M10.3 11.2v5.6M13.7 11.2v5.6"/>',
   send: '<path d="M21.2 2.8 10.6 13.4"/><path d="M21.2 2.8 14.7 21l-4.1-7.6L3 9.3z"/>',
+  edit:
+    '<path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/><path d="M10 21H4.5a.5.5 0 0 1-.5-.5V15"/>',
   chevronDown: '<path d="m6.5 9.5 5.5 5.5 5.5-5.5"/>',
   chevronRight: '<path d="m9.5 6.5 5.5 5.5-5.5 5.5"/>',
   monitor:

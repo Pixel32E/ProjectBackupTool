@@ -10,7 +10,7 @@ import type {
   ProjectEntry,
   RootKind,
 } from "../lib/types";
-import { alertDialog, confirmDialog, notify } from "./useUi";
+import { alertDialog, confirmDialog, notify, openPrompt } from "./useUi";
 
 interface JobState {
   active: boolean;
@@ -340,9 +340,38 @@ export async function deleteSelected(): Promise<void> {
   }
 }
 
+/** 为重命名所选备份记录：弹出输入框设置版本备注，留空则恢复为项目名。 */
+export async function renameSelectedBackup(): Promise<void> {
+  const backup = selectedBackup.value;
+  if (!backup) {
+    notify("warning", "未选择备份", "请先在右侧选择一条备份记录");
+    return;
+  }
+  if (state.busy) {
+    notify("info", "请稍候", "当前有操作正在进行");
+    return;
+  }
+
+  const value = await openPrompt({
+    title: "重命名备份记录",
+    message: "给这条备份记录设置一个名称，用于备注各版本变动；留空可恢复为项目名。",
+    value: backup.remark ?? backup.project_name,
+    placeholder: "例如：v1.2 正式版 / 修复登录崩溃",
+    confirmText: "保存",
+  });
+  if (value === null) return;
+
+  try {
+    await api.renameBackup(backup.file_path, value);
+    await refreshBackups();
+    notify("success", "已重命名", value ? `已备注为“${value}”` : "已恢复为项目名");
+  } catch (error) {
+    notify("error", "重命名失败", String(error));
+  }
+}
+
 export async function loadDevices(): Promise<void> {
   if (devices.loading) return;
-  devices.loading = true;
   devices.error = "";
   try {
     const result = await api.listDevices();

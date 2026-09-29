@@ -7,6 +7,7 @@ import { compactPath, formatDateTime, formatFileSize } from "../lib/format";
 import {
   devices,
   loadDevices,
+  renameSelectedBackup,
   revealPath,
   selectBackup,
   sendSelected,
@@ -39,6 +40,11 @@ async function pickDevice(device: KdeDevice): Promise<void> {
   closeMenu();
   await sendSelected(device);
 }
+
+async function renameBackup(): Promise<void> {
+  closeMenu();
+  await renameSelectedBackup();
+}
 </script>
 
 <template>
@@ -69,7 +75,7 @@ async function pickDevice(device: KdeDevice): Promise<void> {
         <span class="backup__icon"><Icon name="archive" :size="17" /></span>
         <div class="backup__body">
           <div class="backup__title">
-            <span class="backup__name">{{ entry.project_name }}</span>
+            <span class="backup__name">{{ entry.remark || entry.project_name }}</span>
             <span class="backup__size">{{ formatFileSize(entry.size) }}</span>
           </div>
           <div class="backup__time">{{ formatDateTime(entry.modified) }}</div>
@@ -81,6 +87,11 @@ async function pickDevice(device: KdeDevice): Promise<void> {
     <p v-else class="empty">暂无备份记录，选择左侧项目即可开始备份</p>
 
     <PopupMenu v-if="menuPoint" :point="menuPoint" :width="196" @close="closeMenu">
+      <button class="menu__item" @mousedown.prevent @click="renameBackup">
+        <Icon name="edit" :size="16" />
+        <span class="menu__text"><span class="menu__title">重命名</span></span>
+      </button>
+      <div class="menu__sep" />
       <button class="menu__item" @mousedown.prevent @mouseenter="openSubmenu">
         <Icon name="send" :size="16" />
         <span class="menu__text"><span class="menu__title">发送到</span></span>

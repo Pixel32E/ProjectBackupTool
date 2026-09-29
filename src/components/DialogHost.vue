@@ -1,6 +1,24 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from "vue";
+
 import Icon from "./Icon.vue";
-import { dialogState, resolveDialog } from "../store/useUi";
+import { dialogState, promptState, resolveDialog, resolvePrompt } from "../store/useUi";
+
+const promptInput = ref<HTMLInputElement | null>(null);
+watch(
+  () => promptState.open,
+  async (open) => {
+    if (open) {
+      await nextTick();
+      promptInput.value?.focus();
+      promptInput.value?.select();
+    }
+  },
+);
+
+function confirmPrompt(): void {
+  resolvePrompt(promptState.input);
+}
 </script>
 
 <template>
@@ -30,6 +48,37 @@ import { dialogState, resolveDialog } from "../store/useUi";
         >
           <Icon v-if="dialogState.options.danger" name="alert" :size="15" />
           {{ dialogState.options.confirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="promptState.open" class="overlay" @mousedown.self="resolvePrompt(null)">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ promptState.options.title }}</h2>
+      <p v-if="promptState.options.message" class="dialog__message">
+        {{ promptState.options.message }}
+      </p>
+
+      <input
+        ref="promptInput"
+        v-model="promptState.input"
+        class="dialog__input"
+        :placeholder="promptState.options.placeholder"
+        @keydown.enter.prevent="confirmPrompt"
+        @keydown.esc="resolvePrompt(null)"
+      />
+
+      <div class="dialog__footer">
+        <button
+          v-if="promptState.options.cancelText"
+          class="btn btn--ghost"
+          @click="resolvePrompt(null)"
+        >
+          {{ promptState.options.cancelText }}
+        </button>
+        <button class="btn btn--accent" @click="confirmPrompt">
+          {{ promptState.options.confirmText }}
         </button>
       </div>
     </div>

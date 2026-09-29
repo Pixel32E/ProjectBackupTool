@@ -70,6 +70,9 @@ export const restoreBackup = (filePath: string, overwrite: boolean) =>
 
 export const deleteBackup = (filePath: string) => call<void>("delete_backup", { filePath });
 
+export const renameBackup = (filePath: string, remark: string) =>
+  call<void>("rename_backup", { filePath, remark });
+
 export const revealPath = (path: string) => call<void>("reveal_path", { path });
 
 export const listDevices = () => call<DeviceListResult>("list_devices");

@@ -55,6 +55,7 @@ let backups: BackupEntry[] = [
     file_path: `${backupFolder}\\${file}`,
     file_name: file,
     project_name: name,
+    remark: null,
     size,
     modified: time.getTime() - index,
   };
@@ -78,6 +79,7 @@ async function simulateBackup(fileName: string, projectName: string): Promise<un
     file_path: `${backupFolder}\\${fileName}`,
     file_name: fileName,
     project_name: projectName,
+    remark: null,
     size: 18_452_480,
     modified: Date.now(),
   };
@@ -158,6 +160,14 @@ export async function invokePreview(
     case "delete_backup": {
       const filePath = args.filePath as string;
       backups = backups.filter((item) => item.file_path !== filePath);
+      return null;
+    }
+
+    case "rename_backup": {
+      const filePath = args.filePath as string;
+      const remark = (args.remark as string ?? "").trim();
+      const item = backups.find((b) => b.file_path === filePath);
+      if (item) item.remark = remark || null;
       return null;
     }
 
