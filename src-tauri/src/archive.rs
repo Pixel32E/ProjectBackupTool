@@ -184,9 +184,7 @@ where
         .git_exclude(false) // 不读取 .git/info/exclude
         .git_ignore(true) // 读取项目内的 .gitignore（含子目录嵌套）
         .require_git(false) // 即使项目目录不是 git 仓库也应用 .gitignore
-        .parents(false) // 只应用项目目录之内的 .gitignore
-        // .git 目录（或子模块的 .git 指针）属于版本库产物，整棵子树不写入备份
-        .filter_entry(|entry| entry.file_name() != ".git");
+        .parents(false); // 只应用项目目录之内的 .gitignore
 
     for entry in walker.build().flatten() {
         let path = entry.path();
@@ -453,8 +451,8 @@ mod tests {
         assert!(!restored.join("debug.log").exists());
         assert!(!restored.join("nested/cache").exists());
         assert!(!restored.join("sub/secret.txt").exists());
-        // .git 版本库产物排除
-        assert!(!restored.join(".git").exists());
+        // .git 版本库产物随备份保留
+        assert!(restored.join(".git/config").is_file());
 
         let _ = fs::remove_dir_all(&base);
     }
