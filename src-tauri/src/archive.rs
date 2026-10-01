@@ -9,7 +9,6 @@ use std::time::UNIX_EPOCH;
 use lz4_flex::frame::{BlockMode, BlockSize, FrameDecoder, FrameEncoder, FrameInfo};
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
-use walkdir::WalkDir;
 
 use crate::config::CompressionSettings;
 
@@ -140,6 +139,7 @@ fn frame_info(settings: &CompressionSettings) -> FrameInfo {
 
 /// 将整个目录打包为 tar 并整体经 LZ4 帧流压缩，输出 `dest_file`。
 ///
+/// - 项目根目录存在 `.gitignore` 时，按其规则过滤掉被忽略的产物（含子目录中的嵌套 `.gitignore`）；
 /// - 被占用或不可读的文件会被跳过并记录，不影响其余文件；
 /// - 不可访问的子目录与符号链接被忽略；
 /// - `on_progress` 按已处理文件数报告进度（0-100）。
@@ -173,13 +173,30 @@ where
     F: FnMut(u32, String),
 {
     let mut entries: Vec<(PathBuf, bool)> = Vec::new();
-    for entry in WalkDir::new(source_dir)
+
+    // 项目根目录存在 .gitignore 时，按 Git 规则过滤掉被忽略的产物（含子目录中的嵌套 .gitignore）。
+    let mut walker = ignore::WalkBuilder::new(source_dir);
+    walker
         .follow_links(false)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| e.path() != source_dir)
-    {
-        entries.push((entry.path().to_path_buf(), entry.file_type().is_dir()));
+        .hidden(false) // Git 不因隐藏属性忽略文件，只按 .gitignore 规则过滤
+        .ignore(false) // 不读取 .ignore
+        .git_global(false) // 不读取全局 gitignore，保证各机器行为一致
+        .git_exclude(false) // 不读取 .git/info/exclude
+        .git_ignore(true) // 读取项目内的 .gitignore（含子目录嵌套）
+        .require_git(false) // 即使项目目录不是 git 仓库也应用 .gitignore
+        .parents(false) // 只应用项目目录之内的 .gitignore
+        // .git 目录（或子模块的 .git 指针）属于版本库产物，整棵子树不写入备份
+        .filter_entry(|entry| entry.file_name() != ".git");
+
+    for entry in walker.build().flatten() {
+        let path = entry.path();
+        if path == source_dir {
+            continue;
+        }
+        entries.push((
+            path.to_path_buf(),
+            entry.file_type().map(|t| t.is_dir()).unwrap_or(false),
+        ));
     }
 
     let total_files = entries.iter().filter(|(_, is_dir)| !is_dir).count().max(1);
@@ -375,5 +392,70 @@ mod tests {
         assert_eq!(project_name_of("My_App_20260926143000.lz4"), "My_App");
         assert_eq!(project_name_of("plain-name.lz4"), "plain-name");
         assert_eq!(project_name_of("draft_notes.lz4"), "draft_notes");
+    }
+
+    #[test]
+    fn filters_gitignored_files_when_compressing() {
+        let base =
+            std::env::temp_dir().join(format!("project-backup-gitignore-{}", std::process::id()));
+        let source = base.join("source");
+        let restored = base.join("restored");
+        let _ = fs::remove_dir_all(&base);
+
+        // 根目录 .gitignore：忽略 build/、*.log（!keep.log 取反保留）、nested/cache/
+        fs::create_dir_all(source.join("src/util")).unwrap();
+        fs::create_dir_all(source.join("build")).unwrap();
+        fs::create_dir_all(source.join("nested/cache")).unwrap();
+        fs::create_dir_all(source.join("sub")).unwrap();
+        fs::create_dir_all(source.join(".github/workflows")).unwrap();
+        fs::create_dir_all(source.join(".git/objects")).unwrap();
+        fs::write(source.join(".gitignore"), "build/\n*.log\n!keep.log\nnested/cache/\n").unwrap();
+        // 子目录嵌套 .gitignore：仅在该子目录内生效
+        fs::write(source.join("sub/.gitignore"), "secret.txt\n").unwrap();
+
+        fs::write(source.join("src/main.rs"), b"fn main() {}").unwrap();
+        fs::write(source.join("src/util/helper.rs"), b"// helper").unwrap();
+        fs::write(source.join("build/out.bin"), b"artifact").unwrap();
+        fs::write(source.join("build/debug.pdb"), b"symbols").unwrap();
+        fs::write(source.join("debug.log"), b"log").unwrap();
+        fs::write(source.join("keep.log"), b"keep me").unwrap();
+        fs::write(source.join("nested/cache/tmp.dat"), b"cache").unwrap();
+        fs::write(source.join("nested/readme.md"), b"notes").unwrap();
+        fs::write(source.join("sub/secret.txt"), b"secret").unwrap();
+        fs::write(source.join("sub/ok.txt"), b"ok").unwrap();
+        fs::write(source.join(".github/workflows/ci.yml"), b"steps").unwrap();
+        fs::write(source.join(".env.example"), b"KEY=value").unwrap();
+        fs::write(source.join(".git/config"), b"[core]").unwrap();
+
+        let archive = base.join("proj_2610011200.lz4");
+        let settings = CompressionSettings::default();
+
+        let outcome = compress_folder(&source, &archive, &settings, |_, _| {}).unwrap();
+        assert!(outcome.skipped.is_empty());
+        extract_folder(&archive, &restored, |_, _| {}).unwrap();
+
+        // 源码保留
+        assert!(restored.join("src/main.rs").is_file());
+        assert!(restored.join("src/util/helper.rs").is_file());
+        assert!(restored.join("nested/readme.md").is_file());
+        assert!(restored.join("sub/ok.txt").is_file());
+        // .gitignore 自身属于源码，保留（根目录与子目录）
+        assert!(restored.join(".gitignore").is_file());
+        assert!(restored.join("sub/.gitignore").is_file());
+        // 隐藏文件/目录不因隐藏属性被过滤（符合 Git 语义）
+        assert!(restored.join(".github/workflows/ci.yml").is_file());
+        assert!(restored.join(".env.example").is_file());
+        // 取反规则：keep.log 保留
+        assert!(restored.join("keep.log").is_file());
+
+        // 被 .gitignore 忽略的产物全部排除
+        assert!(!restored.join("build").exists());
+        assert!(!restored.join("debug.log").exists());
+        assert!(!restored.join("nested/cache").exists());
+        assert!(!restored.join("sub/secret.txt").exists());
+        // .git 版本库产物排除
+        assert!(!restored.join(".git").exists());
+
+        let _ = fs::remove_dir_all(&base);
     }
 }
