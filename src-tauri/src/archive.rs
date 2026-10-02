@@ -41,16 +41,13 @@ pub struct CompressOutcome {
     pub skipped: Vec<String>,
 }
 
-/// 备份目录：存在 D 盘时使用 `D:\Projects-Backup`，否则使用「文档\Projects-Backup」。
+/// 备份目录：「文档\Projects-Backup」。
 pub fn resolve_backup_folder(app: &AppHandle) -> Result<PathBuf, String> {
-    let folder = if Path::new("D:\\").is_dir() {
-        PathBuf::from("D:\\Projects-Backup")
-    } else {
-        app.path()
-            .document_dir()
-            .map_err(|e| format!("无法定位文档目录：{e}"))?
-            .join("Projects-Backup")
-    };
+    let folder = app
+        .path()
+        .document_dir()
+        .map_err(|e| format!("无法定位文档目录：{e}"))?
+        .join("Projects-Backup");
     fs::create_dir_all(&folder).map_err(|e| format!("无法创建备份目录：{e}"))?;
     Ok(folder)
 }

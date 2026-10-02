@@ -113,7 +113,7 @@ const blockSizes = [
           <div class="setting__row">
             <div class="setting__label">
               <div class="setting__title">备份目录</div>
-              <div class="setting__desc">自动选择：存在 D 盘时使用 D:\Projects-Backup</div>
+              <div class="setting__desc">自动选择：使用「文档\Projects-Backup」</div>
             </div>
           </div>
           <div class="pathbox" style="margin-top: 10px">

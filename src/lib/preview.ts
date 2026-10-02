@@ -37,7 +37,7 @@ const androidProjects = ["Aurora Mobile", "Flux Reader", "Nimbus Wear"];
 
 const webProjects = ["Docs Portal", "Marketing Site", "Admin Console", "Status Page"];
 
-const backupFolder = "D:\\Projects-Backup";
+const backupFolder = "C:\\Users\\User\\Documents\\Projects-Backup";
 
 const blockedPaths = new Set<string>();
 

@@ -14,7 +14,7 @@ Windows 桌面版项目备份工具：把项目文件夹压缩为 LZ4 备份文�
 - 右键备份记录 →「发送到」列出已配对且在线的 KDE Connect 设备并发送文件
 - 压缩参数（块大小 / 块模式 / 内容与块校验和）可在设置中调整
 
-备份目录：存在 D 盘时使用 `D:\Projects-Backup`，否则使用「文档\Projects-Backup」。
+备份目录：「文档\Projects-Backup」。
 
 配置文件：`config.toml`（TOML 格式），位于 Tauri 应用配置目录 `%APPDATA%\com.projectbackup.tool\`。
 
