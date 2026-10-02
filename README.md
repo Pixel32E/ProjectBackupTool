@@ -2,7 +2,7 @@
 
 Windows 桌面版项目备份工具：把项目文件夹压缩为 LZ4 备份文件，支持浏览、恢复、删除，并可通过 KDE Connect 将备份发送到手机或平板。
 
-技术栈：**Tauri 2 + Vue 3 + TypeScript**；压缩使用 **lz4_flex**（tar 归档 + LZ4 帧流，扩展名 `.lz4`）。
+技术栈：**Tauri 2 + Vue 3 + TypeScript**；压缩使用 **lz4_flex**（tar 归档 + LZ4 帧流，扩展名 `.tar.lz4`）。
 
 ## 功能
 

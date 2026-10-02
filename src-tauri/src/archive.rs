@@ -52,7 +52,10 @@ pub fn resolve_backup_folder(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(folder)
 }
 
-/// 扫描备份目录中的 .lz4 文件，按修改时间倒序返回。
+/// 备份文件名后缀：tar 归档后再经 LZ4 帧压缩。
+const ARCHIVE_SUFFIX: &str = ".tar.lz4";
+
+/// 扫描备份目录中的 `.tar.lz4` 文件，按修改时间倒序返回。
 pub fn list_backups(folder: &Path, remarks: &BTreeMap<String, String>) -> Result<BackupList, String> {
     let mut items = Vec::new();
 
@@ -63,10 +66,8 @@ pub fn list_backups(folder: &Path, remarks: &BTreeMap<String, String>) -> Result
             if !path.is_file() {
                 continue;
             }
-            let is_lz4 = path
-                .extension()
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("lz4"));
-            if !is_lz4 {
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if !file_name.to_ascii_lowercase().ends_with(ARCHIVE_SUFFIX) {
                 continue;
             }
 
@@ -77,7 +78,6 @@ pub fn list_backups(folder: &Path, remarks: &BTreeMap<String, String>) -> Result
                 .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
                 .map(|d| d.as_millis() as u64)
                 .unwrap_or(0);
-            let file_name = entry.file_name().to_string_lossy().to_string();
 
             items.push(BackupEntry {
                 project_name: project_name_of(&file_name),
@@ -97,12 +97,18 @@ pub fn list_backups(folder: &Path, remarks: &BTreeMap<String, String>) -> Result
     })
 }
 
-/// 从备份文件名解析项目名：`项目名_yyMMddHHmm.lz4`；后缀不符合规则时回退为整个文件名。
+/// 去掉备份文件名后缀（`.tar.lz4`），大小写不敏感。
+fn strip_archive_suffix(file_name: &str) -> &str {
+    if file_name.to_ascii_lowercase().ends_with(ARCHIVE_SUFFIX) {
+        &file_name[..file_name.len() - ARCHIVE_SUFFIX.len()]
+    } else {
+        file_name
+    }
+}
+
+/// 从备份文件名解析项目名：`项目名_yyMMddHHmm.tar.lz4`；后缀不符合规则时回退为整个文件名。
 pub fn project_name_of(file_name: &str) -> String {
-    let stem = file_name
-        .strip_suffix(".lz4")
-        .or_else(|| file_name.strip_suffix(".LZ4"))
-        .unwrap_or(file_name);
+    let stem = strip_archive_suffix(file_name);
 
     if let Some((head, tail)) = stem.rsplit_once('_') {
         let numeric = !tail.is_empty()
@@ -347,7 +353,7 @@ mod tests {
         fs::write(source.join("readme.txt"), b"hello backup").unwrap();
         fs::write(source.join("nested/deep/payload.bin"), vec![42u8; 200_000]).unwrap();
 
-        let archive = base.join("sample_2609261430.lz4");
+        let archive = base.join("sample_2609261430.tar.lz4");
         let settings = CompressionSettings::default();
 
         let outcome = compress_folder(&source, &archive, &settings, |_, _| {}).unwrap();
@@ -374,7 +380,7 @@ mod tests {
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
 
-        let fake = base.join("fake.lz4");
+        let fake = base.join("fake.tar.lz4");
         fs::write(&fake, b"not an lz4 frame at all").unwrap();
         assert!(extract_folder(&fake, &base.join("out"), |_, _| {}).is_err());
 
@@ -383,10 +389,12 @@ mod tests {
 
     #[test]
     fn parses_project_name_from_file_name() {
-        assert_eq!(project_name_of("Aurora_2609261430.lz4"), "Aurora");
-        assert_eq!(project_name_of("My_App_20260926143000.lz4"), "My_App");
-        assert_eq!(project_name_of("plain-name.lz4"), "plain-name");
-        assert_eq!(project_name_of("draft_notes.lz4"), "draft_notes");
+        assert_eq!(project_name_of("Aurora_2609261430.tar.lz4"), "Aurora");
+        assert_eq!(project_name_of("My_App_20260926143000.tar.lz4"), "My_App");
+        assert_eq!(project_name_of("plain-name.tar.lz4"), "plain-name");
+        assert_eq!(project_name_of("draft_notes.tar.lz4"), "draft_notes");
+        // 大小写不敏感
+        assert_eq!(project_name_of("Aurora_2609261430.TAR.LZ4"), "Aurora");
     }
 
     #[test]
@@ -422,7 +430,7 @@ mod tests {
         fs::write(source.join(".env.example"), b"KEY=value").unwrap();
         fs::write(source.join(".git/config"), b"[core]").unwrap();
 
-        let archive = base.join("proj_2610011200.lz4");
+        let archive = base.join("proj_2610011200.tar.lz4");
         let settings = CompressionSettings::default();
 
         let outcome = compress_folder(&source, &archive, &settings, |_, _| {}).unwrap();

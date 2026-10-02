@@ -29,11 +29,11 @@ export function compactPath(path: string, tail = 2): string {
   return `${parts[0]}\\…\\${parts.slice(-tail).join("\\")}`;
 }
 
-/** 生成备份文件名：`{项目名}_{yyMMddHHmm}.lz4` */
+/** 生成备份文件名：`{项目名}_{yyMMddHHmm}.tar.lz4` */
 export function buildBackupFileName(projectName: string, date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   const stamp =
     `${String(date.getFullYear()).slice(2)}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
     `${pad(date.getHours())}${pad(date.getMinutes())}`;
-  return `${projectName}_${stamp}.lz4`;
+  return `${projectName}_${stamp}.tar.lz4`;
 }
