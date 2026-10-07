@@ -33,12 +33,9 @@ impl Default for CompressionSettings {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
+    /// 唯一可选择的项目根目录；其一级子目录作为待备份项目
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub windows_root: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub android_root: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub web_root: Option<String>,
+    pub project_root: Option<String>,
     pub compression: CompressionSettings,
 }
 
@@ -78,32 +75,24 @@ mod tests {
     #[test]
     fn config_toml_roundtrip() {
         let config = Config {
-            windows_root: Some("D:\\Projects".into()),
-            android_root: None,
-            web_root: Some("F:\\WebProjects".into()),
+            project_root: Some("D:\\Projects".into()),
             compression: CompressionSettings::default(),
         };
 
         let text = toml::to_string_pretty(&config).unwrap();
-        assert!(text.contains("windows_root"));
-        assert!(!text.contains("android_root"));
-        assert!(text.contains("web_root"));
+        assert!(text.contains("project_root"));
         assert!(text.contains("[compression]"));
 
         let parsed: Config = toml::from_str(&text).unwrap();
-        assert_eq!(parsed.windows_root.as_deref(), Some("D:\\Projects"));
-        assert_eq!(parsed.android_root, None);
-        assert_eq!(parsed.web_root.as_deref(), Some("F:\\WebProjects"));
+        assert_eq!(parsed.project_root.as_deref(), Some("D:\\Projects"));
         assert_eq!(parsed.compression.block_size, "1MB");
         assert!(parsed.compression.block_linked);
     }
 
     #[test]
     fn missing_fields_fall_back_to_defaults() {
-        let parsed: Config = toml::from_str("android_root = \"E:\\\\Android\"").unwrap();
-        assert_eq!(parsed.android_root.as_deref(), Some("E:\\Android"));
-        assert_eq!(parsed.windows_root, None);
-        assert_eq!(parsed.web_root, None);
+        let parsed: Config = toml::from_str("project_root = \"E:\\\\Android\"").unwrap();
+        assert_eq!(parsed.project_root.as_deref(), Some("E:\\Android"));
         assert_eq!(parsed.compression.block_size, "1MB");
         assert!(parsed.compression.content_checksum);
         assert!(!parsed.compression.block_checksum);

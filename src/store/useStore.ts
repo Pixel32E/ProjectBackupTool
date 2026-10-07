@@ -8,7 +8,6 @@ import type {
   CompressionSettings,
   KdeDevice,
   ProjectEntry,
-  RootKind,
 } from "../lib/types";
 import { alertDialog, confirmDialog, notify, openPrompt } from "./useUi";
 
@@ -24,15 +23,12 @@ export const state = reactive({
   ready: false,
   config: null as AppConfig | null,
   backupFolder: "",
-  windowsExists: false,
-  androidExists: false,
-  webExists: false,
-  windowsProjects: [] as ProjectEntry[],
-  androidProjects: [] as ProjectEntry[],
-  webProjects: [] as ProjectEntry[],
+  projectRootExists: false,
+  projects: [] as ProjectEntry[],
   backups: [] as BackupEntry[],
   blocked: [] as string[],
-  activeKind: "windows" as RootKind,
+  /** 项目列表的类型标签筛选；null 表示显示全部 */
+  activeTag: null as string | null,
   selectedProjectPath: null as string | null,
   selectedBackupPath: null as string | null,
   busy: false,
@@ -56,11 +52,7 @@ export const devices = reactive({
 export const selectedProject = computed(() => {
   const path = state.selectedProjectPath;
   if (!path) return null;
-  return (
-    [...state.windowsProjects, ...state.androidProjects, ...state.webProjects].find(
-      (project) => project.path === path,
-    ) ?? null
-  );
+  return state.projects.find((project) => project.path === path) ?? null;
 });
 
 export const selectedBackup = computed(() => {
@@ -73,32 +65,10 @@ export const canBackup = computed(() => Boolean(selectedProject.value) && !state
 export const canRestore = computed(() => Boolean(selectedBackup.value) && !state.busy);
 export const canDelete = computed(() => Boolean(selectedBackup.value) && !state.busy);
 
-const allKinds: RootKind[] = ["windows", "android", "web"];
-
-const rootOf: Record<RootKind, () => string | null> = {
-  windows: () => state.config?.windows_root ?? null,
-  android: () => state.config?.android_root ?? null,
-  web: () => state.config?.web_root ?? null,
-};
-
-const kindLabels: Record<RootKind, string> = {
-  windows: "Windows",
-  android: "Android",
-  web: "Web",
-};
-
-const kindExists: Record<RootKind, () => boolean> = {
-  windows: () => state.windowsExists,
-  android: () => state.androidExists,
-  web: () => state.webExists,
-};
-
-/** 当前项目面板选中的项目种类对应的根目录信息（供标题栏展示） */
-export const activeRoot = computed(() => ({
-  kind: state.activeKind,
-  label: kindLabels[state.activeKind],
-  path: rootOf[state.activeKind](),
-  exists: kindExists[state.activeKind](),
+/** 当前唯一的项目根目录信息（供标题栏展示） */
+export const projectRoot = computed(() => ({
+  path: state.config?.project_root ?? null,
+  exists: state.projectRootExists,
 }));
 
 function beginJob(label: string): void {
@@ -129,25 +99,17 @@ export async function init(): Promise<void> {
     state.backups = backups.items;
     state.backupFolder = backups.folder;
     state.blocked = blocked;
-    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    await refreshProjects();
     state.ready = true;
   } catch (error) {
     notify("error", "初始化失败", String(error));
   }
 }
 
-export async function refreshProjects(kind: RootKind): Promise<void> {
-  const scan = await api.listProjects(rootOf[kind]());
-  if (kind === "windows") {
-    state.windowsProjects = scan.items;
-    state.windowsExists = scan.exists;
-  } else if (kind === "android") {
-    state.androidProjects = scan.items;
-    state.androidExists = scan.exists;
-  } else {
-    state.webProjects = scan.items;
-    state.webExists = scan.exists;
-  }
+export async function refreshProjects(): Promise<void> {
+  const scan = await api.listProjects(state.config?.project_root ?? null);
+  state.projects = scan.items;
+  state.projectRootExists = scan.exists;
 }
 
 export async function refreshBackups(): Promise<void> {
@@ -161,7 +123,7 @@ export async function refreshBackups(): Promise<void> {
 
 export async function refreshAll(): Promise<void> {
   try {
-    await Promise.all([...allKinds.map((kind) => refreshProjects(kind)), refreshBackups()]);
+    await Promise.all([refreshProjects(), refreshBackups()]);
     notify("info", "列表已刷新", "项目与备份记录已重新扫描");
   } catch (error) {
     notify("error", "刷新失败", String(error));
@@ -180,7 +142,7 @@ export async function blockProject(path: string): Promise<void> {
       state.selectedProjectPath = null;
     }
     state.blocked = await api.listBlocked();
-    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    await refreshProjects();
     notify("info", "已屏蔽该文件夹", "该条目不再显示于项目列表");
   } catch (error) {
     notify("error", "屏蔽失败", String(error));
@@ -192,7 +154,7 @@ export async function unblockProject(path: string): Promise<void> {
   try {
     await api.unblockProject(path);
     state.blocked = await api.listBlocked();
-    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    await refreshProjects();
     notify("info", "已取消屏蔽", "该文件夹将重新显示于项目列表");
   } catch (error) {
     notify("error", "操作失败", String(error));
@@ -203,15 +165,27 @@ export function selectBackup(entry: BackupEntry): void {
   state.selectedBackupPath = entry.file_path;
 }
 
-export async function pickRoot(kind: RootKind): Promise<void> {
+export async function pickRoot(): Promise<void> {
   try {
-    const config = await api.chooseRoot(kind);
+    const config = await api.chooseRoot();
     if (!config) return;
     state.config = config;
-    await refreshProjects(kind);
-    notify("info", "根目录已更新", `${kindLabels[kind]} 项目目录已保存`);
+    state.selectedProjectPath = null;
+    await refreshProjects();
+    notify("info", "根目录已更新", "项目根目录已保存");
   } catch (error) {
     notify("error", "选择目录失败", String(error));
+  }
+}
+
+/** 设置项目类型标签（单选）；tag 为空字符串时清除标签。 */
+export async function setProjectTag(path: string, tag: string): Promise<void> {
+  try {
+    await api.setProjectTag(path, tag);
+    await refreshProjects();
+    notify("success", "标签已更新", tag ? "已设置项目类型标签" : "已清除项目标签");
+  } catch (error) {
+    notify("error", "设置标签失败", String(error));
   }
 }
 
@@ -299,7 +273,7 @@ export async function restoreSelected(): Promise<void> {
       target = first.target;
     }
 
-    await Promise.all(allKinds.map((kind) => refreshProjects(kind)));
+    await refreshProjects();
     notify("success", "恢复完成", target);
   } catch (error) {
     notify("error", "恢复失败", String(error));

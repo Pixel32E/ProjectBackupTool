@@ -12,15 +12,37 @@ export interface CompressionSettings {
 
 /** 应用配置（持久化为 TOML） */
 export interface AppConfig {
-  windows_root: string | null;
-  android_root: string | null;
-  web_root: string | null;
+  /** 唯一可选择的项目根目录 */
+  project_root: string | null;
   compression: CompressionSettings;
+}
+
+/** 标准化的项目类型标签 */
+export interface ProjectTag {
+  /** 持久化存储的标签 id */
+  id: string;
+  label: string;
+}
+
+/** 标准化的项目类型标签集：每个项目仅可标记其中一种 */
+export const PROJECT_TAGS: ProjectTag[] = [
+  { id: "android", label: "Android" },
+  { id: "web", label: "Web" },
+  { id: "linux", label: "Linux" },
+  { id: "windows", label: "Windows" },
+];
+
+/** 将标签 id 转为展示文案；未知 id 原样返回，空值返回 null。 */
+export function tagLabelOf(id: string | null): string | null {
+  if (!id) return null;
+  return PROJECT_TAGS.find((tag) => tag.id === id)?.label ?? id;
 }
 
 export interface ProjectEntry {
   name: string;
   path: string;
+  /** 项目类型标签 id；未标记时为 null */
+  tag: string | null;
 }
 
 export interface ProjectScan {
@@ -70,5 +92,3 @@ export interface ProgressPayload {
   percent: number;
   message: string;
 }
-
-export type RootKind = "windows" | "android" | "web";

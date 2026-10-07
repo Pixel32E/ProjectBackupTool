@@ -4,6 +4,7 @@ mod commands;
 mod config;
 mod kdeconnect;
 mod records;
+mod tags;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -15,6 +16,7 @@ pub fn run() {
             commands::save_config,
             commands::choose_root,
             commands::list_projects,
+            commands::set_project_tag,
             commands::block_project,
             commands::list_blocked,
             commands::unblock_project,

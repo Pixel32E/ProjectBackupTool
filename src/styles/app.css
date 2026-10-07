@@ -362,63 +362,117 @@ ul {
 
 /* ==================== 列表 ==================== */
 
-/* 项目面板：左侧项目种类切换栏 + 右侧列表 */
+/* 项目面板：标签筛选条 + 项目列表 */
 
-.projectbody {
+.filters {
   display: flex;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
-}
-
-.kindtabs {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  flex-wrap: wrap;
+  gap: 6px;
   flex: none;
-  width: 92px;
-  padding: 4px;
-  border-radius: var(--radius-lg);
-  background: var(--surface-sunken);
+  margin-bottom: 10px;
 }
 
-.kindtab {
-  display: flex;
-  flex-direction: column;
+.filterchip {
+  display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 12px 6px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--pill);
   color: var(--text-secondary);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-xs);
+  font-size: 12px;
+  font-weight: 600;
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
-.kindtab:hover {
-  background: var(--surface-raised);
-  border-color: var(--border);
+.filterchip:hover {
+  background: var(--surface-hover);
   color: var(--text);
 }
 
-.kindtab.is-active {
+.filterchip.is-active {
+  color: var(--accent-strong);
   background: var(--accent-soft);
   border-color: rgba(222, 90, 50, 0.28);
-  color: var(--accent-strong);
 }
 
-.kindtab__label {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.kindtab__count {
+.filterchip__count {
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 500;
 }
 
-.kindtab.is-active .kindtab__count {
+.filterchip.is-active .filterchip__count {
   color: var(--accent);
+}
+
+/* 项目类型标签角标 */
+
+.tagchip {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tagchip--android {
+  color: #2f6b41;
+  background: #e2efe6;
+}
+
+.tagchip--web {
+  color: #2b5f8a;
+  background: #e2edf6;
+}
+
+.tagchip--linux {
+  color: #54419a;
+  background: #eae6f7;
+}
+
+.tagchip--windows {
+  color: #1f6d6a;
+  background: #dff0ee;
+}
+
+.tagdot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.tagdot--android {
+  background: #4b9a68;
+}
+
+.tagdot--web {
+  background: #4a86bd;
+}
+
+.tagdot--linux {
+  background: #7a64cf;
+}
+
+.tagdot--windows {
+  background: #37968f;
+}
+
+.menu__arrow {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.menu__back {
+  transform: rotate(90deg);
 }
 
 .section {

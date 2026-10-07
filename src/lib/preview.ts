@@ -9,9 +9,7 @@ import type { AppConfig, BackupEntry } from "./types";
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let config: AppConfig = {
-  windows_root: "D:\\Projects",
-  android_root: "E:\\AndroidProjects",
-  web_root: "F:\\WebProjects",
+  project_root: "D:\\Projects",
   compression: {
     block_size: "1MB",
     block_linked: true,
@@ -20,7 +18,7 @@ let config: AppConfig = {
   },
 };
 
-const windowsProjects = [
+const projectNames = [
   "Aurora Desk",
   "Backup Core",
   "Flux Notes",
@@ -33,9 +31,13 @@ const windowsProjects = [
   "Relay Chat",
 ];
 
-const androidProjects = ["Aurora Mobile", "Flux Reader", "Nimbus Wear"];
-
-const webProjects = ["Docs Portal", "Marketing Site", "Admin Console", "Status Page"];
+/** 预览模式下的项目标签：路径 → 标签 id */
+const projectTags = new Map<string, string>([
+  ["D:\\Projects\\Orbit Auth", "android"],
+  ["D:\\Projects\\Nimbus Sync", "web"],
+  ["D:\\Projects\\Backup Core", "linux"],
+  ["D:\\Projects\\Kanban Lite", "windows"],
+]);
 
 const backupFolder = "C:\\Users\\User\\Documents\\Projects-Backup";
 
@@ -102,31 +104,36 @@ export async function invokePreview(
       return null;
 
     case "choose_root": {
-      const kind = args.kind as "windows" | "android" | "web";
-      const picks = {
-        windows: { key: "windows_root", path: "D:\\Projects" },
-        android: { key: "android_root", path: "E:\\AndroidProjects" },
-        web: { key: "web_root", path: "F:\\WebProjects" },
-      } as const;
-      config = { ...config, [picks[kind].key]: picks[kind].path };
+      config = { ...config, project_root: "D:\\Projects" };
       return config;
     }
 
     case "list_projects": {
       const root = (args.root as string | null) ?? null;
-      const names =
-        root === config.android_root
-          ? androidProjects
-          : root === config.web_root
-            ? webProjects
-            : windowsProjects;
+      const items = projectNames.map((name) => {
+        const path = `${root}\\${name}`;
+        return {
+          name,
+          path,
+          tag: projectTags.get(path) ?? null,
+        };
+      });
       return {
         root: root ?? "",
         exists: Boolean(root),
-        items: names
-          .map((name) => ({ name, path: `${root}\\${name}` }))
-          .filter((item) => !blockedPaths.has(item.path)),
+        items: items.filter((item) => !blockedPaths.has(item.path)),
       };
+    }
+
+    case "set_project_tag": {
+      const path = args.path as string;
+      const tag = (args.tag as string ?? "").trim();
+      if (tag) {
+        projectTags.set(path, tag);
+      } else {
+        projectTags.delete(path);
+      }
+      return null;
     }
 
     case "block_project": {

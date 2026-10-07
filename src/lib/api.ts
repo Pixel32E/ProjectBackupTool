@@ -9,7 +9,6 @@ import type {
   ProgressPayload,
   ProjectScan,
   RestoreOutcome,
-  RootKind,
 } from "./types";
 
 /** 是否运行在 Tauri 宿主中（浏览器预览时为 false，走本地模拟数据） */
@@ -48,11 +47,14 @@ export const loadConfig = () => call<AppConfig>("load_config");
 
 export const saveConfig = (config: AppConfig) => call<void>("save_config", { config });
 
-export const chooseRoot = (kind: RootKind) =>
-  call<AppConfig | null>("choose_root", { kind });
+export const chooseRoot = () => call<AppConfig | null>("choose_root");
 
 export const listProjects = (root: string | null) =>
   call<ProjectScan>("list_projects", { root });
+
+/** 设置项目类型标签；tag 为空字符串时清除该项目的标签 */
+export const setProjectTag = (path: string, tag: string) =>
+  call<void>("set_project_tag", { path, tag });
 
 export const blockProject = (path: string) => call<void>("block_project", { path });
 

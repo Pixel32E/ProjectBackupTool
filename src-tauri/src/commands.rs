@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -29,6 +30,8 @@ fn emit_progress(app: &AppHandle, job: &'static str, percent: u32, message: Stri
 pub struct ProjectEntry {
     pub name: String,
     pub path: String,
+    /// 项目类型标签 id（`android` / `web` / `linux`）；未标记时为 None
+    pub tag: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -55,21 +58,15 @@ pub fn save_config(app: AppHandle, config: Config) -> Result<(), String> {
     config::save(&app, &config)
 }
 
-/// 弹出系统文件夹选择框并把结果写入配置；取消时返回 None。
+/// 弹出系统文件夹选择框并把结果写入唯一的项目根目录；取消时返回 None。
 #[tauri::command]
-pub async fn choose_root(app: AppHandle, kind: String) -> Result<Option<Config>, String> {
-    let title = match kind.as_str() {
-        "android" => "选择 Android 项目根目录",
-        "web" => "选择 Web 项目根目录",
-        _ => "选择 Windows 项目根目录",
-    };
-
+pub async fn choose_root(app: AppHandle) -> Result<Option<Config>, String> {
     let dialog_app = app.clone();
     let picked = tauri::async_runtime::spawn_blocking(move || {
         dialog_app
             .dialog()
             .file()
-            .set_title(title)
+            .set_title("选择项目根目录")
             .blocking_pick_folder()
             .and_then(|folder| folder.into_path().ok())
             .map(|path| path.to_string_lossy().to_string())
@@ -82,25 +79,27 @@ pub async fn choose_root(app: AppHandle, kind: String) -> Result<Option<Config>,
     };
 
     let mut config = config::load(&app);
-    match kind.as_str() {
-        "android" => config.android_root = Some(path),
-        "web" => config.web_root = Some(path),
-        _ => config.windows_root = Some(path),
-    }
+    config.project_root = Some(path);
     config::save(&app, &config)?;
     Ok(Some(config))
 }
 
-/// 扫描根目录下的一级子目录作为待备份项目，屏蔽黑名单中的条目会被过滤。
+/// 扫描项目根目录下的一级子目录作为待备份项目，屏蔽黑名单中的条目会被过滤，
+/// 并附带每个项目已保存的类型标签。
 #[tauri::command]
 pub async fn list_projects(app: AppHandle, root: Option<String>) -> Result<ProjectScan, String> {
     let blocklist = blocklist::load(&app);
-    tauri::async_runtime::spawn_blocking(move || scan_projects(root, &blocklist))
+    let tags = crate::tags::load(&app);
+    tauri::async_runtime::spawn_blocking(move || scan_projects(root, &blocklist, &tags))
         .await
         .map_err(|e| format!("扫描项目目录失败：{e}"))
 }
 
-fn scan_projects(root: Option<String>, blocklist: &Blocklist) -> ProjectScan {
+fn scan_projects(
+    root: Option<String>,
+    blocklist: &Blocklist,
+    tags: &BTreeMap<String, String>,
+) -> ProjectScan {
     let Some(root) = root.filter(|r| !r.trim().is_empty()) else {
         return ProjectScan {
             root: String::new(),
@@ -130,6 +129,7 @@ fn scan_projects(root: Option<String>, blocklist: &Blocklist) -> ProjectScan {
             }
             items.push(ProjectEntry {
                 name: entry.file_name().to_string_lossy().to_string(),
+                tag: crate::tags::tag_of(tags, &item_path),
                 path: item_path,
             });
         }
@@ -141,6 +141,15 @@ fn scan_projects(root: Option<String>, blocklist: &Blocklist) -> ProjectScan {
         exists: true,
         items,
     }
+}
+
+/// 设置某项目的类型标签；传入空标签则清除。每个项目仅保留一个标签。
+#[tauri::command]
+pub fn set_project_tag(app: AppHandle, path: String, tag: String) -> Result<(), String> {
+    if path.trim().is_empty() {
+        return Err("路径未设置".into());
+    }
+    crate::tags::set(&app, &path, &tag)
 }
 
 /// 将项目文件夹加入屏蔽黑名单，之后不再出现在项目列表中。
@@ -241,37 +250,12 @@ pub async fn restore_backup(
             .as_str(),
     );
 
-    let windows_root = config
-        .windows_root
+    let root = config
+        .project_root
         .as_deref()
-        .filter(|path| Path::new(path).is_dir());
-    let android_root = config
-        .android_root
-        .as_deref()
-        .filter(|path| Path::new(path).is_dir());
-    let web_root = config
-        .web_root
-        .as_deref()
-        .filter(|path| Path::new(path).is_dir());
-
-    // 有效根目录按 Android → Web → Windows 的优先级排列
-    let roots: Vec<PathBuf> = [android_root, web_root, windows_root]
-        .into_iter()
-        .flatten()
-        .map(PathBuf::from)
-        .collect();
-
-    if roots.is_empty() {
-        return Err("请先设置有效的项目根目录".into());
-    }
-
-    // 某根目录下存在同名项目时恢复到该目录，否则优先 Windows 根目录
-    let target_root = roots
-        .iter()
-        .find(|root| root.join(&project_name).exists())
-        .unwrap_or_else(|| roots.last().expect("roots 非空"))
-        .clone();
-    let target = target_root.join(&project_name);
+        .filter(|path| Path::new(path).is_dir())
+        .ok_or_else(|| "请先设置有效的项目根目录".to_string())?;
+    let target = Path::new(root).join(&project_name);
 
     if target.exists() {
         if !overwrite {
