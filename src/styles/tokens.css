@@ -45,9 +45,21 @@
   --shadow-md: 0 12px 32px rgba(31, 22, 16, 0.1);
   --shadow-lg: 0 28px 64px rgba(31, 22, 16, 0.2);
 
-  /* 字体 */
-  --font-sans: "Segoe UI Variable Text", "Segoe UI", "Inter", "PingFang SC",
-    "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", "Inter", "PingFang SC",
-    "Microsoft YaHei UI", system-ui, sans-serif;
+  /* 字体：中文 UI 字体优先，避免 Inter 等非系统字体与雅黑混排 */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+    "PingFang SC", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* 字号阶梯：只用整数像素，避免 100% DPI 下 11.5/12.5 取整不一致 */
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 17px;
+
+  /* 字重阶梯：Windows 中文 UI 字体只有 400 / 700 两档，
+     统一用 400 / 600 / 700，避免 500、550、650 造成中英粗细错位 */
+  --fw-regular: 400;
+  --fw-medium: 600;
+  --fw-bold: 700;
 }

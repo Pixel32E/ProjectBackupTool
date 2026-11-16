@@ -1,9 +1,9 @@
 import { createPortal } from "react-dom";
 
-import Icon from "./Icon";
-import { dismissToast, useToasts } from "../store/uiStore";
+import Icon, { type IconName } from "./Icon";
+import { dismissToast, useToasts, type ToastKind } from "../store/uiStore";
 
-const icons: Record<string, string> = {
+const toastIcons: Record<ToastKind, IconName> = {
   success: "checkCircle",
   error: "alert",
   warning: "alert",
@@ -24,7 +24,7 @@ export default function ToastHost() {
           onClick={() => dismissToast(toast.id)}
         >
           <span className="toast__icon">
-            <Icon name={icons[toast.kind] ?? "info"} size={15} />
+            <Icon name={toastIcons[toast.kind]} size={15} />
           </span>
           <div className="toast__body">
             <div className="toast__title">{toast.title}</div>

@@ -13,11 +13,15 @@ body,
 
 body {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
+  /* 禁止浏览器伪造字重，中文只会落到 400 / 700 两档真实字重 */
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
   user-select: none;
   cursor: default;
@@ -90,8 +94,8 @@ ul {
   align-items: center;
   gap: 9px;
   color: var(--text-secondary);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.01em;
 }
 
@@ -130,6 +134,16 @@ ul {
 .winbtn--close:hover {
   background: var(--danger);
   color: #fff;
+}
+
+/* 窗口控制沿用 Windows 惯例：直角方框 */
+.winbtn .icon svg rect {
+  rx: 0;
+}
+
+/* 还原图标：镜像后成为「前景在左下、后景在右上」，与 Windows 标题栏一致 */
+.winbtn-restore svg {
+  transform: scaleX(-1);
 }
 
 .workspace {
@@ -174,10 +188,9 @@ ul {
 }
 
 .panel__title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.01em;
 }
 
 .panel__sub {
@@ -190,7 +203,7 @@ ul {
   border-radius: var(--pill);
   background: var(--surface-sunken);
   color: var(--text-tertiary);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   transition: color 0.15s ease, background 0.15s ease;
 }
 
@@ -215,8 +228,8 @@ ul {
   height: 38px;
   padding: 0 17px;
   border-radius: var(--pill);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   letter-spacing: 0.01em;
   white-space: nowrap;
   transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease,
@@ -267,7 +280,7 @@ ul {
   height: 32px;
   padding: 0 12px;
   color: var(--text-secondary);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 .btn--plain:hover:not(:disabled) {
@@ -284,8 +297,8 @@ ul {
   height: 24px;
   padding: 0 10px;
   border-radius: var(--pill);
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   color: var(--text-secondary);
   background: var(--surface-sunken);
 }
@@ -335,15 +348,15 @@ ul {
   overflow: hidden;
   max-width: none;
   color: var(--accent-strong);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .pathchip--empty .pathchip__value {
   color: var(--text-tertiary);
-  font-weight: 500;
+  font-weight: var(--fw-regular);
 }
 
 /* ==================== 工具栏 ==================== */
@@ -383,8 +396,8 @@ ul {
   color: var(--text-secondary);
   background: var(--surface-raised);
   box-shadow: var(--shadow-xs);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
@@ -401,8 +414,8 @@ ul {
 
 .filterchip__count {
   color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-regular);
 }
 
 .filterchip.is-active .filterchip__count {
@@ -418,8 +431,8 @@ ul {
   height: 20px;
   padding: 0 8px;
   border-radius: var(--pill);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-medium);
   white-space: nowrap;
 }
 
@@ -489,8 +502,8 @@ ul {
   flex: none;
   padding: 0 4px 8px;
   color: var(--text-secondary);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
 }
 
 .section__head .icon {
@@ -500,8 +513,8 @@ ul {
 .section__count {
   margin-left: auto;
   color: var(--text-tertiary);
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
 }
 
 .divider {
@@ -564,8 +577,8 @@ ul {
 .row__name {
   flex: 1;
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 550;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -576,7 +589,7 @@ ul {
 
 .row__hint {
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
 }
 
 .empty {
@@ -586,7 +599,7 @@ ul {
   flex: 1;
   padding: 18px 0;
   color: var(--text-tertiary);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 /* 备份记录行 */
@@ -641,8 +654,8 @@ ul {
 
 .backup__name {
   overflow: hidden;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
   letter-spacing: -0.01em;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -655,21 +668,24 @@ ul {
 .backup__size {
   flex: none;
   color: var(--text-tertiary);
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
 }
 
 .backup__time {
   margin-top: 1px;
   color: var(--text-secondary);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .backup__file {
   overflow: hidden;
   margin-top: 1px;
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -695,7 +711,7 @@ ul {
   align-items: center;
   gap: 8px;
   color: var(--text-tertiary);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 .actionbar__buttons {
@@ -718,15 +734,15 @@ ul {
 }
 
 .progress__label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
 }
 
 .progress__percent {
   margin-left: auto;
   color: var(--accent-strong);
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -761,7 +777,7 @@ ul {
 
 .progress__detail {
   color: var(--text-tertiary);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
 }
 
 /* ==================== 弹层：菜单 ==================== */
@@ -827,14 +843,14 @@ ul {
 }
 
 .menu__title {
-  font-size: 13px;
-  font-weight: 550;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
 }
 
 .menu__sub {
   overflow: hidden;
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -842,7 +858,7 @@ ul {
 .menu__note {
   padding: 9px 10px;
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
 .menu__sep {
@@ -896,16 +912,15 @@ ul {
 }
 
 .dialog__title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.01em;
 }
 
 .dialog__message {
   margin-top: 8px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   user-select: text;
 }
@@ -918,8 +933,8 @@ ul {
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   color: var(--text-secondary);
-  font-size: 12px;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
   user-select: text;
 }
 
@@ -938,7 +953,7 @@ ul {
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   color: var(--text);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   outline: none;
   transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
@@ -983,14 +998,14 @@ ul {
 }
 
 .setting__title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
 }
 
 .setting__desc {
   margin-top: 2px;
   color: var(--text-tertiary);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
 }
 
 .setting__field {
@@ -1015,8 +1030,8 @@ ul {
   padding: 5px 12px;
   border-radius: var(--pill);
   color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -1075,7 +1090,7 @@ ul {
   flex: 1;
   overflow: hidden;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -1108,7 +1123,7 @@ ul {
   flex: 1;
   overflow: hidden;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -1181,14 +1196,14 @@ ul {
 }
 
 .toast__title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
 }
 
 .toast__message {
   margin-top: 2px;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.5;
   user-select: text;
   word-break: break-word;
